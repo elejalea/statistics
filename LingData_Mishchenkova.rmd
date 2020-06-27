@@ -1,0 +1,523 @@
+---
+title: "Graphs"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(party)
+library(ggridges)
+library(factoextra)
+library(knitr)
+library(anchors)
+library(xtable)
+Sys.setlocale("LC_CTYPE", "russian")
+
+si <- read.csv('si.csv')
+sk <- read.csv('sk.csv')
+gi <- read.csv('gi.csv')
+sa <- read.csv('sa.csv')
+
+sa$dial <- as.factor(sa$dia)
+si$dial <- as.factor(si$dia)
+sk$dial <- as.factor(sk$dia)
+gi$dial <- as.factor(gi$dia)
+
+sa$norm <- as.factor(sa$norm)
+si$norm <- as.factor(si$norm)
+sk$norm <- as.factor(sk$norm)
+gi$norm <- as.factor(gi$norm)
+
+
+```
+
+
+# Reflection of *s in anlaut
+
+## Table
+Dialects: v, d, i, p, s, t
+```{r warning = FALSE, echo = FALSE, results='asis'}
+kable(table(sa$dial, sa$norm))
+```
+
+```{r warning = F, echo = F}
+sa %>% ggplot(aes(x = dial, fill = norm)) + geom_bar() +
+  labs(x = 'dialect') +
+  scale_y_continuous(breaks = seq(0, 80, 5)) +
+  geom_text(aes(label=..count..),stat="count",position=position_stack())
+```
+
+## Overall density plots
+```{r warning = F, echo = F}
+sa %>% ggplot(aes(dur)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.03)) +
+  labs(x = 'Duration')
+```
+
+```{r warning = F, echo = F}
+sa %>% ggplot(aes(int)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(20, 70, 2)) +
+  labs(x = 'Intensity')
+```
+
+
+
+## Statistics
+Dialects: v, d, i, p, s, t
+```{r warning = F}
+summary(sa$int)
+summary(sa$dur)
+sa %>% group_by(dial) %>% 
+  summarise(mean_dur = mean(dur),
+            sd_dur = sd(dur),
+            mean_int = mean(int),
+            sd_int = sd(int)) %>% 
+  mutate(across(where(is.numeric), round, 3))
+cor.test(sa$int, sa$dur)
+
+```
+
+## Facet tables
+```{r warning = F, echo = F, fig.width = 10, fig.height=8}
+sa %>% ggplot(aes(dur)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Duration') +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r warning = F, echo = F}
+sa %>% ggplot(aes(int)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Intensity') + 
+  scale_x_continuous(breaks = seq(20, 70, 5))
+```
+
+
+## Boxplots
+```{r warning = F, echo=F}
+sa %>% ggplot(aes(y = dur, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Duration', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r warning = F, echo=F}
+sa %>% ggplot(aes(y = int, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Intensity', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(20, 70, 5))
+```
+
+
+
+## Scatter plots
+```{r warning=F, echo=F}
+sa %>% 
+  ggplot(aes(dur, int)) +
+  geom_point(aes(color = norm)) + geom_smooth(alpha=0.2)+
+labs(color = 'Norm', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 70, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r warning=F, echo=F}
+sa %>% 
+  ggplot(aes(dur, int)) +
+  geom_point(aes(color = dial)) + geom_smooth(alpha=0.2) +
+  labs(color = 'dialect', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 70, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+## Tree decision
+```{r warning = F, echo = F}
+fit <- ctree(dial~dur + int, data = sa)
+plot(fit)
+```
+
+# Reflection of *s in intervocalic inlaut
+
+## Table
+```{r warning = FALSE, echo = FALSE, results='asis'}
+kable(table(si$dia, si$norm))
+```
+
+```{r warning = F, echo = F}
+si %>% ggplot(aes(x = dial, fill = norm)) + geom_bar() +
+  labs(x = 'dialect') +
+  scale_y_continuous(breaks = seq(0, 80, 5)) +
+  geom_text(aes(label=..count..),stat="count",position=position_stack())
+```
+
+## Overall density plots
+```{r warning = F, echo = F}
+si %>% ggplot(aes(dur)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.03)) +
+  labs(x = 'Duration')
+```
+
+```{r warning = F, echo = F}
+si %>% ggplot(aes(int)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(20, 70, 2)) +
+  labs(x = 'Intensity')
+```
+
+
+
+## Statistics
+```{r warning = F}
+summary(si$int)
+summary(si$dur)
+kable(si %>% group_by(dial) %>% 
+  summarise(mean_dur = mean(dur),
+            sd_dur = sd(dur),
+            mean_int = mean(int),
+            sd_int = sd(int)) %>% 
+  mutate(across(where(is.numeric), round, 3)))
+cor.test(si$int, si$dur)
+
+```
+
+## Facet tables
+```{r warning = F, echo = F, fig.width = 10, fig.height=8}
+si %>% ggplot(aes(dur)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Duration') +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r warning = F, echo = F}
+si %>% ggplot(aes(int)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Intensity') + 
+  scale_x_continuous(breaks = seq(20, 70, 5))
+```
+
+
+## Boxplots
+```{r warning = F, echo=F}
+si %>% ggplot(aes(y = dur, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Duration', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r warning = F, echo=F}
+si %>% ggplot(aes(y = int, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Intensity', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(20, 70, 5))
+```
+
+
+
+## Scatter plots
+```{r warning=F, echo=F}
+si %>% 
+  ggplot(aes(dur, int)) +
+  geom_point(aes(color = norm)) + geom_smooth(alpha=0.2)+
+labs(color = 'Norm', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 70, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r warning=F, echo=F}
+si %>% 
+  ggplot(aes(dur, int)) +
+  geom_point(aes(color = dial)) + geom_smooth(alpha=0.2) +
+  labs(color = 'dialect', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 70, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+<!-- ## Tree decision -->
+```{r warning = F, echo = F}
+# fit <- ctree(dial~dur + int, data = si)
+# plot(fit)
+```
+
+
+# Reflection of *s in consonant cluster -sk-/-ks-
+
+## Table
+```{r warning = FALSE, echo = FALSE, results='asis'}
+kable(table(sk$dia, sk$norm))
+```
+
+```{r warning = F, echo = F}
+sk %>% ggplot(aes(x = dial, fill = norm)) + geom_bar() +
+  labs(x = 'dialect') +
+  scale_y_continuous(breaks = seq(0, 80, 5)) +
+  geom_text(aes(label=..count..),stat="count",position=position_stack())
+```
+
+## Overall density plots
+```{r warning = F, echo = F}
+sk %>% ggplot(aes(dur)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02)) +
+  labs(x = 'Duration')
+```
+
+```{r warning = F, echo = F}
+sk %>% ggplot(aes(int)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(20, 75, 2)) +
+  labs(x = 'Intensity')
+```
+
+
+
+## Statistics
+```{r warning = F}
+summary(sk$int)
+summary(sk$dur)
+kable(sk %>% group_by(dial) %>% 
+  summarise(mean_dur = mean(dur),
+            sd_dur = sd(dur),
+            mean_int = mean(int),
+            sd_int = sd(int)) %>% 
+  mutate(across(where(is.numeric), round, 3)))
+cor.test(sk$int, sk$dur)
+
+```
+
+## Facet tables
+```{r warning = F, echo = F, fig.width = 10, fig.height=8}
+sk %>% ggplot(aes(dur)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Duration') +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r warning = F, echo = F}
+sk %>% ggplot(aes(int)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Intensity') + 
+  scale_x_continuous(breaks = seq(20, 73, 5))
+```
+
+
+## Boxplots
+```{r warning = F, echo=F}
+sk %>% ggplot(aes(y = dur, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Duration', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(0, 0.6, 0.02))
+```
+
+```{r warning = F, echo=F}
+sk %>% ggplot(aes(y = int, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Intensity', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(20, 75, 5))
+```
+
+
+
+## Scatter plots
+```{r warning=F, echo=F}
+sk %>% 
+  ggplot(aes(dur, int, color = norm)) +
+  geom_point(aes(color = norm)) + geom_smooth(alpha=0.2, method = 'lm')+
+labs(color = 'Norm', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 70, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r warning=F, echo=F}
+sk %>% 
+  ggplot(aes(dur, int)) +
+  geom_point(aes(color = dial)) + geom_smooth(alpha=0.2) +
+  labs(color = 'dialect', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 70, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02))
+```
+
+## Tree decision
+```{r warning = F, echo = F}
+fit <- ctree(dial~dur + int, data = sk)
+plot(fit)
+```
+
+# Reflection of *g in intervocalic inlaut
+
+## Table
+```{r warning = FALSE, echo = FALSE, results='asis'}
+kable(table(gi$dia, gi$norm))
+```
+
+```{r warning = F, echo = F}
+gi %>% ggplot(aes(x = dial, fill = norm)) + geom_bar() +
+  labs(x = 'dialect') +
+  scale_y_continuous(breaks = seq(0, 80, 5)) +
+  geom_text(aes(label=..count..),stat="count",position=position_stack())
+```
+
+## Overall density plots
+```{r warning = F, echo = F}
+gi %>% ggplot(aes(dur)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02)) +
+  labs(x = 'Duration')
+```
+
+```{r warning = F, echo = F}
+gi %>% ggplot(aes(int)) +
+  geom_density(fill = 'blue', alpha = 0.5) +
+  scale_x_continuous(breaks = seq(20, 120, 2)) +
+  labs(x = 'Intensity')
+```
+
+
+
+## Statistics
+```{r warning = F}
+summary(gi$int)
+summary(gi$dur)
+kable(gi %>% group_by(dial) %>% 
+  summarise(mean_dur = mean(dur),
+            sd_dur = sd(dur),
+            mean_int = mean(int),
+            sd_int = sd(int)) %>% 
+  mutate(across(where(is.numeric), round, 3)))
+cor.test(gi$int, gi$dur)
+
+```
+
+## Facet tables
+```{r warning = F, echo = F, fig.width = 10, fig.height=8}
+gi %>% na.omit() %>%  ggplot(aes(dur)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Duration') +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r warning = F, echo = F}
+gi %>% na.omit() %>%  ggplot(aes(int)) +
+  geom_histogram(fill = 'white', color = 'black', bins = 30) +
+  facet_wrap(~dial) + labs(x = 'Intensity') + 
+  scale_x_continuous(breaks = seq(20, 90, 5))
+```
+
+
+## Boxplots
+```{r warning = F, echo=F}
+gi %>% na.omit() %>% 
+  ggplot(aes(y = dur, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Duration', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(0, 0.6, 0.02))
+```
+
+```{r warning = F, echo=F}
+gi %>% na.omit() %>% 
+  ggplot(aes(y = int, fill = dial, x = dial)) +
+  geom_boxplot() + labs(y = 'Intensity', x = 'dialect',
+                        fill = 'dialect') +
+  theme(axis.title.x=element_blank()) + 
+  scale_y_continuous(breaks = seq(20, 90, 5))
+```
+
+
+
+## Scatter plots
+```{r warning=F, echo=F}
+gi %>% 
+  ggplot(aes(dur, int)) +
+  geom_point(aes(color = norm)) + geom_smooth(alpha=0.2)+
+labs(color = 'Norm', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 90, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02))
+```
+
+```{r warning=F, echo=F}
+gi %>% na.omit() %>% 
+  ggplot(aes(dur, int)) +
+  geom_point(aes(color = dial)) + geom_smooth(alpha=0.2) +
+  labs(color = 'dialect', x = 'Duration', y = 'Intensity') +
+  scale_y_continuous(breaks = seq(20, 90, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02))
+```
+
+## Tree decision
+```{r warning = F, echo = F}
+fit <- ctree(dial~dur + int, data = na.omit(gi))
+plot(fit)
+```
+
+
+## GI & SI
+
+Negative correlation between both gi and si
+```{r}
+cor.test(gi$dur, gi$int)
+cor.test(si$dur, si$int)
+```
+
+## Intensity and Duration interaction between groups
+```{r warning=F, echo=F}
+rbind(si %>% mutate(group = 's'), 
+      gi %>% mutate(group = 'g')) %>% 
+  ggplot(aes(dur, int, color = group)) +
+  geom_point() + 
+  geom_smooth(se = F) +
+  scale_y_continuous(breaks = seq(20, 90, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02)) +
+  labs(x = 'Duration', y = 'Intensity')
+```
+
+
+```{r echo = FALSE, warning = FALSE}
+rbind(si %>% mutate(group = 's'), 
+      gi %>% mutate(group = 'g')) %>% 
+  ggplot(aes(dur, int, color = group)) +
+  geom_point() + 
+  geom_smooth(se = F, method = 'lm')+
+  scale_y_continuous(breaks = seq(20, 90, 5)) + 
+  scale_x_continuous(breaks = seq(0, 0.6, 0.02))
+```
+
+## Boxplots
+```{r warning=F, echo=F}
+rbind(si %>% mutate(group = 's'), 
+      gi %>% mutate(group = 'g')) %>% 
+  na.omit() %>% 
+  ggplot(aes(dial, dur, fill = group)) +
+  geom_boxplot() +
+  scale_y_continuous(breaks = seq(0, 0.6, 0.025)) +
+  labs(y = 'Duration')
+```
+
+
+```{r warning = F, echo=F}
+rbind(si %>% mutate(group = 's'), 
+      gi %>% mutate(group = 'g')) %>% 
+  na.omit() %>% 
+  ggplot(aes(dial, int, fill = group)) +
+  geom_boxplot() +
+  scale_y_continuous(breaks = seq(0, 100, 5)) +
+  labs(y = 'Intensity')
+```
+
